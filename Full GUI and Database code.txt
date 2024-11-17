@@ -1,0 +1,223 @@
+Dear Learners follow this guideline as a supplement to our materials on how to connect GUI to database and perform the CRUD operations. 
+
+
+
+// Set dependency in the pom.xml document between the </properties> and </project> tag 
+
+
+
+<dependencies>
+        <!-- MySQL Connector/J dependency -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version> <!-- Use the latest version available -->
+        </dependency>
+    </dependencies>
+
+
+
+
+
+
+
+1) The first function 
+
+
+
+//put this function to connect your GUI to databse 
+
+public Connection getConnection(){
+    Connection con=null;
+try{
+    try{
+    Class.forName("com.mysql.cj.jdbc.Driver");
+    
+    }catch(ClassNotFoundException ex){
+    JOptionPane.showMessageDialog(this,"CLASS NOT FOUND");
+    }
+     con = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/Project1", "root", "");
+}catch (SQLException ex){
+    JOptionPane.showMessageDialog(this,"SQL EXCEPTION");
+}
+return con;
+}
+
+
+
+
+2) The Second Function 
+
+// put this second function below the first function to execute SQL queries 
+
+
+public void executeSQLQuery(String query, String message) {
+        java.sql.Connection con = getConnection();
+        Statement st = null;
+        try {
+            st = con.createStatement();
+            if ((st.executeUpdate(query)) == 1) {
+                //Refresh data   
+                JOptionPane.showMessageDialog(null, "Data" + " " + message + " " + "Successful");
+
+                st.close();
+            } else {
+                JOptionPane.showMessageDialog(null, "Data Not" + " " + message);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } }
+
+
+
+3) Insert this code in the add button to insert records to the database 
+
+
+
+ String sql="INSERT INTO Table1(ID, Name, Address, Contacts)VALUES "
+  + "('"+ID_txt.getText()+"', '"+Name_txt.getText()+"','"+Address_txt.getText()+"','"+Contacts_txt.getText()+"')";
+   executeSQLQuery(sql, "Added Successfully");
+
+
+
+4) Insert this code in the update button to update records in the table 
+
+// take the second line of this code and combine it with first line since its continues. i.e combine WHERE and ID
+
+String sql="UPDATE Table1 SET Name='"+Name_txt.getText()+"', Address='"+Address_txt.getText()+"',Contacts='"+Contacts_txt.getText()+"' WHERE ID='"+ID_txt.getText()+"'";
+        executeSQLQuery(sql," RECORD UPDATED ");
+
+
+
+5) Code to delete records from the database 
+
+
+        String sql="DELETE FROM Table1 where ID='"+ID_txt.getText()+"'";
+         executeSQLQuery(sql," RECORD DELETED ");
+
+
+
+6) Code to fetch records from the database
+
+a) assume you want to be able to search for a record in that database by typing the ID then when you click search button the other fields are populated if the record exists. 
+
+
+// Write this method just below the second function 
+
+
+
+// Method to retrieve data based on ID and display it on textfields 
+    public void searchRecord() {
+        String id = ID_txt.getText();  // Get the ID entered in the txtID field
+
+        Connection con = getConnection();
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+
+        try {
+            // Query to select record by ID
+            String query = "SELECT * FROM Table1 WHERE ID = ?";
+            pst = con.prepareStatement(query);
+            pst.setString(1, id);
+
+            rs = pst.executeQuery();
+
+            if (rs.next()) {
+                // Populate the text fields with retrieved data
+                Name_txt.setText(rs.getString("Name"));
+                Address_txt.setText(rs.getString("Address"));
+                Contacts_txt.setText(rs.getString("Contacts"));
+            } else {
+                JOptionPane.showMessageDialog(null, "Record not found");
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error while retrieving data: " + e.getMessage());
+        } finally {
+            // Close connection
+            try {
+                if (rs != null) rs.close();
+                if (pst != null) pst.close();
+                if (con != null) con.close();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null, "Error closing connection: " + e.getMessage());
+            }}}
+
+// Now call the function in the display button by using the code below 
+
+
+searchRecord();
+
+
+
+b) now assume you want to display the records in a table. Add a table to the GUI and put the code below just after the one in a 
+
+
+// method to fetch data and display it on a table 
+    // Method to retrieve all records and populate the JTable
+    public void fetchRecords() {
+        Connection con = getConnection();
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+
+        try {
+            // Query to select all records
+            String query = "SELECT * FROM Table1";
+            pst = con.prepareStatement(query);
+
+            rs = pst.executeQuery();
+            
+            // Get the DefaultTableModel of the JTable
+            DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+            
+            // Clear existing rows in the table
+            model.setRowCount(0);
+            
+            // Fetch and add each row from the result set
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getInt("ID"),
+                    rs.getString("Name"),
+                    rs.getString("Address"),
+                    rs.getString("Contacts")
+                };
+                model.addRow(row);  // Add the row to the JTable
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Error while retrieving data: " + e.getMessage());
+        } finally {
+            // Close connection
+            try {
+                if (rs != null) rs.close();
+                if (pst != null) pst.close();
+                if (con != null) con.close();
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(null, "Error closing connection: " + e.getMessage());
+            }
+        }
+    }
+
+// Now for records to displayed in the table you need a user event in which you will call the function. you have several options 
+Option 1. add a display button and put this code in the display button 
+
+fetchRecords();
+
+
+
+Option 2: you may want that every time you do changes in the record the table is updated in Realtime. so put the code to call the function (code below) in the insert, update, and delete buttons. 
+
+fetchRecords();
+
+
+
+
+NB: You may want that everytime you run the application the table presents all the records in it for you to view. Then put the code to call the function as shown below. 
+
+
+ public Trial1() {
+        initComponents();
+        setLocationRelativeTo(null);
+        fetchRecords();
+    }
+               
